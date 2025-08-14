@@ -1,4 +1,4 @@
-export type ProviderID = 'openai' | 'openrouter' | 'kilocode' | 'ollama' | 'ovhcloud' | 'groq' | 'openai-compatible';
+export type ProviderID = 'openai' | 'openrouter' | 'kilocode' | 'ollama' | 'ovhcloud' | 'groq' | 'mistral' | 'mistral-codestral' | 'openai-compatible';
 
 export type Provider = {
   id: ProviderID;
