@@ -44,7 +44,7 @@ That's it. No chat, no agents, no distractions.
    - Select a model from the available options (Codestral and Gemini 2.5 flash are good options)
    - Give your profile a memorable name
 
-![Example completion for a Golang app](images/examples/completion.gif)
+![Example completion for a Golang app](images/examples/configure-provider.gif)
 
 2. **Activate Your Profile**:
    - `TabCoder: Switch Active Profile`
