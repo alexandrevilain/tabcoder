@@ -1,0 +1,9 @@
+This project is licensed under the Apache License, Version 2.0.
+
+It includes third-party components under separate licenses:
+
+1. Code inspirations:
+   Portions of this code are adapted from:
+
+   - KiloCode (https://github.com/Kilo-Org/kilocode) — Licensed under Apache License 2.0
+   - Continue (https://github.com/continuedev/continue) — Licensed under Apache License 2.0

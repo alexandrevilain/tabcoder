@@ -1,0 +1,156 @@
+{
+  "name": "tabcoder",
+  "displayName": "TabCoder",
+  "description": "AI-driven code suggestions",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "author": {
+    "name": "Alexandre VILAIN"
+  },
+  "icon": "images/icon.png",
+  "publisher": "alexandrevilain",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alexandrevilain/tabcoder.git"
+  },
+  "bugs": {
+    "url": "https://github.com/alexandrevilain/tabcoder/issues"
+  },
+  "homepage": "https://github.com/alexandrevilain/tabcoder/blob/main/README.md",
+  "license": "Apache-2.0",
+  "pricing": "Free",
+  "categories": [
+    "AI",
+    "Programming Languages"
+  ],
+  "keywords": [
+    "ai",
+    "completion",
+    "ollama",
+    "openai",
+    "openrouter"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "tabcoder.createProfile",
+        "title": "$(add) Create New AI Profile",
+        "category": "TabCoder",
+        "description": "Set up a new AI provider configuration with API key, model selection, and custom settings"
+      },
+      {
+        "command": "tabcoder.setActiveProfile",
+        "title": "$(gear) Switch Active Profile",
+        "category": "TabCoder",
+        "description": "Choose which AI profile to use for code completions, or disable TabCoder entirely"
+      },
+      {
+        "command": "tabcoder.removeProfile",
+        "title": "$(trash) Delete Profile",
+        "category": "TabCoder",
+        "description": "Permanently remove an AI profile configuration from your settings"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "tabcoder.createProfile",
+          "when": "true"
+        },
+        {
+          "command": "tabcoder.setActiveProfile",
+          "when": "true"
+        },
+        {
+          "command": "tabcoder.removeProfile",
+          "when": "true"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "TabCoder",
+      "properties": {
+        "tabcoder.profiles": {
+          "type": "array",
+          "default": [],
+          "description": "Configuration profiles for TabCoder",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "provider": {
+                "type": "string"
+              },
+              "baseURL": {
+                "type": "string"
+              },
+              "modelId": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "tabcoder.activeProfileId": {
+          "type": "string",
+          "default": null,
+          "description": "ID of the currently active TabCoder profile"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "compile": "npm run check-types && npm run lint && node esbuild.js",
+    "watch": "npm-run-all -p watch:*",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "build": "npm run check-types && npm run lint && node esbuild.js --production",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "gen:licenses": "npx --yes generate-license-file --input ./package.json --output ./THIRD_PARTY_LICENSES.md --overwrite",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vscode-test",
+    "deploy": "vsce publish",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/chai": "^5.2.2",
+    "@types/node": "22.x",
+    "@types/react-dom": "^19.1.7",
+    "@types/sinon": "^17.0.4",
+    "@types/uuid": "^10.0.0",
+    "@types/vscode": "^1.74.0",
+    "@typescript-eslint/eslint-plugin": "^8.39.1",
+    "@typescript-eslint/parser": "^8.39.1",
+    "@vscode/test-cli": "^0.0.11",
+    "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^3.6.0",
+    "chai": "^5.2.1",
+    "esbuild": "^0.25.9",
+    "esbuild-plugin-tailwindcss": "^2.0.1",
+    "eslint": "^9.33.0",
+    "npm-run-all": "^4.1.5",
+    "sinon": "^21.0.0",
+    "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "@ai-sdk/openai-compatible": "^1.0.7",
+    "@ai-sdk/provider": "^2.0.0",
+    "ai": "^5.0.13",
+    "ai-sdk-ollama": "^0.5.0",
+    "uuid": "^11.1.0"
+  }
+}
