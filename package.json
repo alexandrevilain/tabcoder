@@ -149,7 +149,7 @@
   "dependencies": {
     "@ai-sdk/openai-compatible": "^1.0.7",
     "@ai-sdk/provider": "^2.0.0",
-    "ai": "^5.0.13",
+    "ai": "^5.0.14",
     "ai-sdk-ollama": "^0.5.0",
     "uuid": "^11.1.0"
   }
