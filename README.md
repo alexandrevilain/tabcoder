@@ -13,7 +13,7 @@ Although it's a complete rewrite from scratch, it draws significant inspiration 
 
 Several popular tools either dropped or lack support for pure AI-powered autocomplete:
 
-1. **KiloCode** removed support for this feature in [PR #1565](https://github.com/Kilo-Org/kilocode/pull/1565) in favor of Inline Assist which is great but doesn't provides real-time suggestions as it should be manually triggered.
+1. **KiloCode** removed support for this feature in [PR #1565](https://github.com/Kilo-Org/kilocode/pull/1565) in favor of Inline Assist, which is great but doesn’t provide real-time suggestions since it must be manually triggered. A new “Auto trigger” option was later added to automatically launch Inline Assist when you stop typing, which can be handy for quick fixes. However, it feels too intrusive for autocomplete use cases, as it displays a diff rather than inline, seamless suggestions.
 2. **RooCode** and **Cline** currently don't offer AI-driven autocompletion.
 3. **GitHub Copilot Chat** is open-source, but **Copilot's autocomplete** remains proprietary—no custom provider support.
 4. **Continue** had a stellar autocomplete feature, but the project's scope includes too many unrelated features.
