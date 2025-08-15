@@ -16,6 +16,8 @@ function languageModelProvider(providerId: ProviderID): LanguageModelProvider {
         case 'ovhcloud':
         case 'groq':
         case 'openai-compatible':
+        case 'mistral':
+        case 'mistral-codestral': // TODO: we should support FIM endpoint.
             return new OpenAICompatibleProvider();
         case 'ollama':
             return new OllamaProvider();
@@ -64,10 +66,19 @@ export const providers: Provider[] = [
     name: "OVHcloud",
     defaultBaseURL: "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1"
   },
-    {
+  {
     id: 'groq',
     name: "Groq",
     defaultBaseURL: "https://api.groq.com/openai/v1"
   },
-  
+  {
+    id: 'mistral',
+    name: "Mistral",
+    defaultBaseURL: "https://api.mistral.ai/v1"
+  },
+  {
+    id: 'mistral-codestral',
+    name: 'Codestral (mistral)',
+    defaultBaseURL: "https://codestral.mistral.ai/v1"
+  }
 ];

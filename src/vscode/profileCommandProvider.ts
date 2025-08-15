@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { ProfileService } from '../services/profileService';
-import { ProfileWithAPIKey, ProviderID } from '../types';
+import { ProfileWithAPIKey, ProviderConnection, ProviderID } from '../types';
 import { logger } from '../utils/logger';
 import { listModelsFromProviderConnection, providers } from '../providers/providers';
 
@@ -17,7 +17,7 @@ export class ProfileCommandProvider {
     public async createProfile(): Promise<void> {
         try {
             // First, ask the user to select the provider.
-            const availableProviders: { label: string; id: ProviderID }[] = providers.map(provider => ({ label: provider.name, id: provider.id}));
+            const availableProviders: { label: string; id: ProviderID }[] = providers.map(provider => ({ label: provider.name, id: provider.id }));
 
             const selectedProvider = await vscode.window.showQuickPick(availableProviders, {
                 title: "Create New AI Profile - Step 1 of 5",
@@ -79,85 +79,19 @@ export class ProfileCommandProvider {
                 apiKey = inputApiKey;
             }
 
-            // Load models for the selected provider.
-            const qp = vscode.window.createQuickPick();
-            qp.title = 'Create New AI Profile - Step 4 of 5';
-            qp.placeholder = 'Loading available models from your provider...';
-            qp.items = [{
-                label: '$(loading~spin) Loading models...',
-                description: 'This may take a few seconds',
-                detail: 'Connecting to your AI provider to fetch available models'
-            }];
-            qp.ignoreFocusOut = true;
-            qp.busy = true;
-            qp.show();
-
-            let models: any[] = [];
-            try {
-                models = await listModelsFromProviderConnection({
+            let selectedModelId = '';
+            if (selectedProvider.id === 'mistral-codestral') {
+                selectedModelId = 'codestral-latest';
+            } else {
+               selectedModelId = await this.askForModel({
                     id: selectedProvider.id,
                     baseURL,
                     apiKey
                 });
-            } catch (error) {
-                logger.error('Error loading models:', error);
-                qp.items = [{
-                    label: '$(error) Connection Failed',
-                    description: 'Could not connect to your AI provider',
-                    detail: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`
-                }];
-                qp.placeholder = 'Connection failed - please check your settings';
-                qp.busy = false;
-                
-                // Wait for user acknowledgment before closing.
-                await new Promise<void>((resolve) => {
-                    qp.onDidHide(() => {
-                        qp.dispose();
-                        resolve();
-                    });
-                });
+            }
+
+            if (!selectedModelId) {
                 return;
-            }
-
-            // Replace items as models are now loaded.
-            if (models.length === 0) {
-                qp.items = [{
-                    label: '$(warning) No models found',
-                    description: 'Your provider connection works, but no models are available',
-                    detail: 'This might be normal for some providers. You can continue with a custom model ID.'
-                }];
-                qp.placeholder = 'No models found - you may need to specify a model manually';
-            } else {
-                qp.items = models.map(model => ({
-                    label: model.name,
-                    id: model.id,
-                    description: `Model ID: ${model.id}`,
-                    detail: 'Select this model for code completions'
-                }));
-                qp.placeholder = `Choose from ${models.length} available models`;
-            }
-            qp.busy = false;
-
-            // Wait for user to select a model.
-            const modelId = await new Promise<string>((resolve) => {
-                qp.onDidAccept(() => {
-                    const selectedItems = qp.selectedItems;
-                    if (selectedItems.length > 0) {
-                        const modelName = selectedItems[0].label;
-                        const selectedModelId = models.find(m => m.name === modelName)?.id || '';
-                        qp.hide();
-                        resolve(selectedModelId);
-                    }
-                });
-
-                qp.onDidHide(() => {
-                    qp.dispose();
-                    resolve(''); // User cancelled or closed the picker
-                });
-            });
-
-            if (!modelId) {
-                return; // User cancelled.
             }
 
             // Ask the user to set profile name.
@@ -224,7 +158,7 @@ export class ProfileCommandProvider {
                 name: name.trim(),
                 provider: selectedProvider.id,
                 baseURL: baseURL.trim(),
-                modelId: modelId.trim(),
+                modelId: selectedModelId.trim(),
                 apiKey: apiKey.trim()
             };
 
@@ -234,7 +168,7 @@ export class ProfileCommandProvider {
             // Set as default if requested
             if (shouldSetAsDefault) {
                 try {
-                   await this.profileService.setActiveProfileId(newProfile.id);
+                    await this.profileService.setActiveProfileId(newProfile.id);
                     logger.info(`Profile set as default: ${newProfile.name}`);
                     vscode.window.showInformationMessage(`Profile "${newProfile.name}" created and activated! TabCoder is ready to use.`);
                 } catch (error) {
@@ -251,11 +185,87 @@ export class ProfileCommandProvider {
                 'Try Again',
                 'Cancel'
             );
-            
+
             if (retry === 'Try Again') {
                 await this.createProfile();
             }
         }
+    }
+
+    async askForModel(conn: ProviderConnection): Promise<string> {
+        // Load models for the selected provider.
+        const qp = vscode.window.createQuickPick();
+        qp.title = 'Create New AI Profile - Step 4 of 5';
+        qp.placeholder = 'Loading available models from your provider...';
+        qp.items = [{
+            label: '$(loading~spin) Loading models...',
+            description: 'This may take a few seconds',
+            detail: 'Connecting to your AI provider to fetch available models'
+        }];
+        qp.ignoreFocusOut = true;
+        qp.busy = true;
+        qp.show();
+
+        let models: any[] = [];
+        try {
+            models = await listModelsFromProviderConnection(conn);
+        } catch (error) {
+            logger.error('Error loading models:', error);
+            qp.items = [{
+                label: '$(error) Connection Failed',
+                description: 'Could not connect to your AI provider',
+                detail: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`
+            }];
+            qp.placeholder = 'Connection failed - please check your settings';
+            qp.busy = false;
+
+            // Wait for user acknowledgment before closing.
+            await new Promise<void>((resolve) => {
+                qp.onDidHide(() => {
+                    qp.dispose();
+                    resolve();
+                });
+            });
+
+            return '';
+        }
+
+        // Replace items as models are now loaded.
+        if (models.length === 0) {
+            qp.items = [{
+                label: '$(warning) No models found',
+                description: 'Your provider connection works, but no models are available',
+                detail: 'This might be normal for some providers. You can continue with a custom model ID.'
+            }];
+            qp.placeholder = 'No models found - you may need to specify a model manually';
+        } else {
+            qp.items = models.map(model => ({
+                label: model.name,
+                id: model.id,
+                description: `Model ID: ${model.id}`,
+                detail: 'Select this model for code completions'
+            }));
+            qp.placeholder = `Choose from ${models.length} available models`;
+        }
+        qp.busy = false;
+
+        // Wait for user to select a model.
+        return await new Promise<string>((resolve) => {
+            qp.onDidAccept(() => {
+                const selectedItems = qp.selectedItems;
+                if (selectedItems.length > 0) {
+                    const modelName = selectedItems[0].label;
+                    const selectedModelId = models.find(m => m.name === modelName)?.id || '';
+                    qp.hide();
+                    resolve(selectedModelId);
+                }
+            });
+
+            qp.onDidHide(() => {
+                qp.dispose();
+                resolve(''); // User cancelled or closed the picker
+            });
+        });
     }
 
     /**
@@ -278,7 +288,7 @@ export class ProfileCommandProvider {
             }
 
             const currentActiveProfile = await this.profileService.getActiveProfile();
-            
+
             // Create quick pick items
             const profileItems = profiles.map(profile => ({
                 label: `${profile.id === currentActiveProfile?.id ? '$(check) ' : ''}${profile.name}`,
@@ -336,7 +346,7 @@ export class ProfileCommandProvider {
             }
 
             const currentActiveProfile = await this.profileService.getActiveProfile();
-            
+
             // Create quick pick items
             const profileItems = profiles.map(profile => ({
                 label: `${profile.id === currentActiveProfile?.id ? '$(warning) ' : ''}${profile.name}`,
@@ -364,7 +374,7 @@ export class ProfileCommandProvider {
             const warningMessage = isActiveProfile
                 ? `You are about to delete "${profileName}", which is currently your active profile.\n\nThis will:\n• Remove all configuration data\n• Disable TabCoder completions\n• Cannot be undone\n\nAre you sure?`
                 : `Are you sure you want to delete the profile "${profileName}"?\n\nThis action cannot be undone.`;
-            
+
             const result = await vscode.window.showWarningMessage(
                 warningMessage,
                 { modal: true },
@@ -377,7 +387,7 @@ export class ProfileCommandProvider {
             }
 
             await this.profileService.deleteProfile(selectedItem.profileId);
-            
+
             if (isActiveProfile) {
                 vscode.window.showInformationMessage(`Profile "${profileName}" deleted. TabCoder is now disabled.`);
             } else {
