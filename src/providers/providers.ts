@@ -2,6 +2,7 @@ import { ProfileWithAPIKey, Provider, ProviderConnection, ProviderID, Model } fr
 import { OpenAICompatibleProvider } from "./openaiCompatible";
 import { OllamaProvider } from "./ollama";
 import { type LanguageModelV2 } from "@ai-sdk/provider";
+import { CodestralProvider } from "./codestral";
 
 export interface LanguageModelProvider {
     languageModel(profile: ProfileWithAPIKey): LanguageModelV2
@@ -17,10 +18,11 @@ function languageModelProvider(providerId: ProviderID): LanguageModelProvider {
         case 'groq':
         case 'openai-compatible':
         case 'mistral':
-        case 'mistral-codestral': // TODO: we should support FIM endpoint.
-            return new OpenAICompatibleProvider();
+          return new OpenAICompatibleProvider();
         case 'ollama':
-            return new OllamaProvider();
+          return new OllamaProvider();
+        case 'mistral-codestral':
+          return new CodestralProvider();
         default:
             throw new Error(`Unsupported provider: ${providerId}`);
     }
@@ -34,6 +36,9 @@ export function getLanguageModelFromProfile(profile: ProfileWithAPIKey): Languag
     return languageModelProvider(profile.provider).languageModel(profile);
 }
 
+export function isFimProvider(provider: ProviderID): boolean {
+  return provider === 'mistral-codestral';
+}
 
 export const providers: Provider[] = [
   {
