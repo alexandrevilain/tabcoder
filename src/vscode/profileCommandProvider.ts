@@ -79,16 +79,12 @@ export class ProfileCommandProvider {
                 apiKey = inputApiKey;
             }
 
-            let selectedModelId = '';
-            if (selectedProvider.id === 'mistral-codestral') {
-                selectedModelId = 'codestral-latest';
-            } else {
-               selectedModelId = await this.askForModel({
-                    id: selectedProvider.id,
-                    baseURL,
-                    apiKey
-                });
-            }
+            const selectedModelId = await this.loadAndAskForModel({
+                id: selectedProvider.id,
+                baseURL,
+                apiKey
+            });
+            
 
             if (!selectedModelId) {
                 return;
@@ -192,7 +188,7 @@ export class ProfileCommandProvider {
         }
     }
 
-    async askForModel(conn: ProviderConnection): Promise<string> {
+    async loadAndAskForModel(conn: ProviderConnection): Promise<string> {
         // Load models for the selected provider.
         const qp = vscode.window.createQuickPick();
         qp.title = 'Create New AI Profile - Step 4 of 5';

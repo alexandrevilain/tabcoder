@@ -1,8 +1,7 @@
 import * as vscode from 'vscode';
-import { HoleFiller, DefaultHoleFiller } from '../autocomplete/holeFiller';
-import { AutoCompleteContext } from '../autocomplete/context';
+import { MistralFimHoleFiller, AutoCompleteContext, DefaultHoleFiller } from '../autocomplete';
 import { ProfileService } from '../services/profileService';
-import { getLanguageModelFromProfile } from '../providers/providers';
+import { getLanguageModelFromProfile, isFimProvider } from '../providers/providers';
 import { generateText } from 'ai';
 import { TabCoderStatusBarProvider } from './statusBarProvider';
 import { logger } from '../utils/logger';
@@ -10,7 +9,6 @@ import { LanguageModelV2 } from '@ai-sdk/provider';
 import { ProfileWithAPIKey } from '../types';
 
 export class TabCoderInlineCompletionProvider implements vscode.InlineCompletionItemProvider {
-    private holeFiller: HoleFiller = new DefaultHoleFiller();
     private profileService: ProfileService;
     private statusBarProvider: TabCoderStatusBarProvider;
     private debounceTimeout: NodeJS.Timeout | undefined;
@@ -257,12 +255,11 @@ export class TabCoderInlineCompletionProvider implements vscode.InlineCompletion
                 logger.debug(`Request ${requestId}: Using cached model for profile ${profile.id}`);
             }
 
+            const holeFiller = isFimProvider(profile.provider) ? new MistralFimHoleFiller() : new DefaultHoleFiller();
+
             const { text, usage } = await generateText({
                 model: this.cachedModel!,
-                messages: [
-                    { role: "system", content: this.holeFiller.systemPrompt() },
-                    { role: "user", content: this.holeFiller.userPrompt(params) },
-                ],
+                ...holeFiller.prompt(params),
                 abortSignal: this.currentAbortController.signal,
             });
 
