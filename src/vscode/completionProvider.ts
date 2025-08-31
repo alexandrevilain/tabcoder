@@ -7,10 +7,12 @@ import { TabCoderStatusBarProvider } from './statusBarProvider';
 import { logger } from '../utils/logger';
 import { LanguageModelV2 } from '@ai-sdk/provider';
 import { ProfileWithAPIKey } from '../types';
+import { LSPProvider } from '../services/lspProvider';
 
 export class TabCoderInlineCompletionProvider implements vscode.InlineCompletionItemProvider {
     private profileService: ProfileService;
     private statusBarProvider: TabCoderStatusBarProvider;
+    private lspProvider: LSPProvider;
     private debounceTimeout: NodeJS.Timeout | undefined;
     private currentAbortController: AbortController | undefined;
 
@@ -24,11 +26,15 @@ export class TabCoderInlineCompletionProvider implements vscode.InlineCompletion
     private lastChangeTimestamp: number = 0;
 
 
-    constructor(profileService: ProfileService, statusBarProvider: TabCoderStatusBarProvider) {
+    constructor(profileService: ProfileService, statusBarProvider: TabCoderStatusBarProvider, lspProvider: LSPProvider) {
         this.profileService = profileService;
         this.profileService.onDidActiveProfileChange(this.handleProfileChange, this);
 
         this.statusBarProvider = statusBarProvider;
+        this.lspProvider = lspProvider;
+
+        // Set up document change listeners to preload LSP context
+        this.setupLSPPreloading();
     }
 
     async provideInlineCompletionItems(
@@ -224,12 +230,20 @@ export class TabCoderInlineCompletionProvider implements vscode.InlineCompletion
             new vscode.Position(document.lineCount - 1, document.lineAt(document.lineCount - 1).text.length)
         ));
 
+        // Get LSP context (sync first, then async if needed)
+        let lspContext = this.lspProvider.getLSPContextSync(document);
+        if (!lspContext) {
+            // Start async LSP context gathering (fire and forget for this request)
+            this.lspProvider.preloadLSPContext(document, position);
+        }
+
         const params: AutoCompleteContext = {
             textBeforeCursor,
             textAfterCursor,
             filename: document.fileName,
             language: document.languageId,
             currentLineText: document.lineAt(position.line).text,
+            lspContext: lspContext || undefined,
         };
 
         logger.info(`Request ${requestId}: Using profile: ${profile.name} (ID: ${profile.id})`);
@@ -334,5 +348,41 @@ export class TabCoderInlineCompletionProvider implements vscode.InlineCompletion
         this.cachedModel = undefined;
         this.lastUsedProfileId = undefined;
         logger.info('Active profile changed, clearing cached model');
+    }
+
+    private setupLSPPreloading(): void {
+        // Preload LSP context when documents are opened or changed
+        vscode.workspace.onDidOpenTextDocument((document) => {
+            if (document.uri.scheme === 'file') {
+                // Preload LSP context for newly opened documents
+                const position = new vscode.Position(0, 0);
+                this.lspProvider.preloadLSPContext(document, position);
+            }
+        });
+
+        vscode.workspace.onDidChangeTextDocument((event) => {
+            if (event.document.uri.scheme === 'file' && event.contentChanges.length > 0) {
+                // Clear cache when document changes significantly
+                if (event.contentChanges.some(change => change.text.includes('\n') || change.rangeLength > 10)) {
+                    this.lspProvider.clearCache(event.document.uri);
+                }
+            }
+        });
+
+        vscode.workspace.onDidSaveTextDocument((document) => {
+            if (document.uri.scheme === 'file') {
+                // Clear cache and preload fresh LSP context after save
+                this.lspProvider.clearCache(document.uri);
+                const position = new vscode.Position(0, 0);
+                this.lspProvider.preloadLSPContext(document, position);
+            }
+        });
+    }
+
+    /**
+     * Get LSP provider instance for external access
+     */
+    public getLSPProvider(): LSPProvider {
+        return this.lspProvider;
     }
 }
