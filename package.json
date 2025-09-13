@@ -129,7 +129,6 @@
   "devDependencies": {
     "@types/chai": "^5.2.2",
     "@types/node": "22.x",
-    "@types/react-dom": "^19.1.7",
     "@types/sinon": "^17.0.4",
     "@types/uuid": "^10.0.0",
     "@types/vscode": "^1.74.0",
@@ -140,7 +139,6 @@
     "@vscode/vsce": "^3.6.0",
     "chai": "^6.0.1",
     "esbuild": "^0.25.9",
-    "esbuild-plugin-tailwindcss": "^2.0.1",
     "eslint": "^9.34.0",
     "npm-run-all": "^4.1.5",
     "sinon": "^21.0.0",
@@ -149,6 +147,7 @@
   "dependencies": {
     "@ai-sdk/openai-compatible": "^1.0.15",
     "@ai-sdk/provider": "^2.0.0",
+    "@ai-sdk/provider-utils": "^3.0.9",
     "ai": "^5.0.22",
     "ai-sdk-mistral-fim": "^0.0.1",
     "ai-sdk-ollama": "^0.5.1",
