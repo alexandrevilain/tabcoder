@@ -148,7 +148,7 @@
     "@ai-sdk/openai-compatible": "^1.0.15",
     "@ai-sdk/provider": "^2.0.0",
     "@ai-sdk/provider-utils": "^3.0.9",
-    "ai": "^5.0.22",
+    "ai": "^5.0.44",
     "ai-sdk-mistral-fim": "^0.0.1",
     "ai-sdk-ollama": "^0.5.1",
     "uuid": "^11.1.0"
