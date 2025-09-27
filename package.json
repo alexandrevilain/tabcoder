@@ -145,7 +145,7 @@
     "typescript": "^5.9.2"
   },
   "dependencies": {
-    "@ai-sdk/openai-compatible": "^1.0.15",
+    "@ai-sdk/openai-compatible": "^1.0.19",
     "@ai-sdk/provider": "^2.0.0",
     "@ai-sdk/provider-utils": "^3.0.9",
     "ai": "^5.0.53",
