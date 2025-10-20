@@ -147,7 +147,7 @@
   "dependencies": {
     "@ai-sdk/openai-compatible": "^1.0.20",
     "@ai-sdk/provider": "^2.0.0",
-    "@ai-sdk/provider-utils": "^3.0.9",
+    "@ai-sdk/provider-utils": "^3.0.12",
     "ai": "^5.0.53",
     "ai-sdk-mistral-fim": "^0.0.1",
     "ai-sdk-ollama": "^0.5.1",
