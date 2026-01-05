@@ -5,6 +5,7 @@ import { TabCoderStatusBarProvider } from './vscode/statusBarProvider';
 import { ProfileCommandProvider } from './vscode/profileCommandProvider';
 import { logger } from './utils/logger';
 import { ProfileService } from './services/profileService';
+import { LSPProvider } from './services/lspProvider';
 
 export function activate(context: vscode.ExtensionContext) {
 	// Initialize ConfigurationProvider with context for secure storage.
@@ -23,8 +24,16 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('tabcoder.statusBarClicked', () => statusBarProvider.handleStatusBarClick())
 	);
 
+	// Create LSP provider for gathering code definitions
+	const lspProvider = new LSPProvider({
+		maxDefinitions: 50,
+		includeWorkspaceSymbols: true,
+		cacheTimeout: 30000, // 30 seconds
+		relevanceThreshold: 0.3
+	});
+
 	// Register the inline completion provider for all languages.
-	const inlineCompletionProvider = new TabCoderInlineCompletionProvider(profileService, statusBarProvider);
+	const inlineCompletionProvider = new TabCoderInlineCompletionProvider(profileService, statusBarProvider, lspProvider);
 	context.subscriptions.push(
 		vscode.languages.registerInlineCompletionItemProvider(
 			'*', // Register for all languages

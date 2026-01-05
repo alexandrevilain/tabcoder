@@ -1,4 +1,6 @@
 import { HoleFiller, PromptArgs, AutoCompleteContext } from "./holeFiller";
+import { LSPDefinition } from "../types/lsp";
+import * as vscode from 'vscode';
 
 // Source: continue/core/autocomplete/templating/AutocompleteTemplate.ts (holeFillerTemplate)
 export class DefaultHoleFiller implements HoleFiller {
@@ -99,7 +101,95 @@ function hypothenuse(a, b) {
     if (ctx.language !== '') {
       context += `// Programming language: "${ctx.language}" \n`;
     }
+
+    // Add LSP context if available
+    if (ctx.lspContext && ctx.lspContext.definitions.length > 0) {
+      context += this.formatLSPContext(ctx.lspContext.definitions);
+    }
+
     return `${context}<QUERY>\n${ctx.textBeforeCursor}{{FILL_HERE}}${ctx.textAfterCursor}\n</QUERY>\nTASK: Fill the {{FILL_HERE}} hole. Answer only with the CORRECT completion, and NOTHING ELSE. Do it now.\n<COMPLETION>`;
+  }
+
+  private formatLSPContext(definitions: LSPDefinition[]): string {
+    if (definitions.length === 0) {return '';}
+
+    let context = '// Available definitions and symbols:\n';
+    
+    // Group definitions by type for better organization
+    const functions = definitions.filter(d => [vscode.SymbolKind.Function, vscode.SymbolKind.Method].includes(d.kind));
+    const classes = definitions.filter(d => [vscode.SymbolKind.Class, vscode.SymbolKind.Interface].includes(d.kind));
+    const variables = definitions.filter(d => [vscode.SymbolKind.Variable, vscode.SymbolKind.Property, vscode.SymbolKind.Field].includes(d.kind));
+    const types = definitions.filter(d => [vscode.SymbolKind.Enum, vscode.SymbolKind.Struct, vscode.SymbolKind.TypeParameter].includes(d.kind));
+
+    // Add functions and methods
+    if (functions.length > 0) {
+      context += '// Functions/Methods:\n';
+      functions.slice(0, 10).forEach(def => {
+        const signature = this.formatDefinitionSignature(def);
+        context += `//   ${signature}\n`;
+      });
+    }
+
+    // Add classes and interfaces
+    if (classes.length > 0) {
+      context += '// Classes/Interfaces:\n';
+      classes.slice(0, 8).forEach(def => {
+        const signature = this.formatDefinitionSignature(def);
+        context += `//   ${signature}\n`;
+      });
+    }
+
+    // Add variables and properties
+    if (variables.length > 0) {
+      context += '// Variables/Properties:\n';
+      variables.slice(0, 8).forEach(def => {
+        const signature = this.formatDefinitionSignature(def);
+        context += `//   ${signature}\n`;
+      });
+    }
+
+    // Add types
+    if (types.length > 0) {
+      context += '// Types:\n';
+      types.slice(0, 5).forEach(def => {
+        const signature = this.formatDefinitionSignature(def);
+        context += `//   ${signature}\n`;
+      });
+    }
+
+    return context;
+  }
+
+  private formatDefinitionSignature(def: LSPDefinition): string {
+    const kindName = this.getSymbolKindName(def.kind);
+    let signature = `${def.name}`;
+    
+    if (def.detail) {
+      signature += `: ${def.detail}`;
+    }
+    
+    if (def.containerName) {
+      signature = `${def.containerName}.${signature}`;
+    }
+    
+    return `${kindName} ${signature}`;
+  }
+
+  private getSymbolKindName(kind: vscode.SymbolKind): string {
+    switch (kind) {
+      case vscode.SymbolKind.Function: return 'function';
+      case vscode.SymbolKind.Method: return 'method';
+      case vscode.SymbolKind.Class: return 'class';
+      case vscode.SymbolKind.Interface: return 'interface';
+      case vscode.SymbolKind.Variable: return 'var';
+      case vscode.SymbolKind.Property: return 'prop';
+      case vscode.SymbolKind.Field: return 'field';
+      case vscode.SymbolKind.Enum: return 'enum';
+      case vscode.SymbolKind.Struct: return 'struct';
+      case vscode.SymbolKind.TypeParameter: return 'type';
+      case vscode.SymbolKind.Constant: return 'const';
+      default: return 'symbol';
+    }
   }
 
   prompt(params: AutoCompleteContext): PromptArgs {
